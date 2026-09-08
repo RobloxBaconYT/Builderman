@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { BRAND_COLOR } = require('../../utils/constants');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -14,7 +15,7 @@ module.exports = {
     const embed = new EmbedBuilder()
       .setTitle(`${target.tag}'s Avatar`)
       .setImage(target.displayAvatarURL({ size: 512 }))
-      .setColor(0x5865f2);
+      .setColor(BRAND_COLOR);
 
     await interaction.reply({ embeds: [embed] });
   },

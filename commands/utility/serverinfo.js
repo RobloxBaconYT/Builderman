@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { BRAND_COLOR } = require('../../utils/constants');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -19,7 +20,7 @@ module.exports = {
         { name: 'Channels', value: `${guild.channels.cache.size}`, inline: true },
         { name: 'Boost Level', value: `${guild.premiumTier}`, inline: true },
       )
-      .setColor(0x5865f2);
+      .setColor(BRAND_COLOR);
 
     await interaction.reply({ embeds: [embed] });
   },

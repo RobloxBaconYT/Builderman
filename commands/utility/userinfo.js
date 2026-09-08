@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { BRAND_COLOR } = require('../../utils/constants');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -19,7 +20,7 @@ module.exports = {
         { name: 'Account Created', value: `<t:${Math.floor(target.user.createdTimestamp / 1000)}:R>`, inline: true },
         { name: 'Roles', value: target.roles.cache.map((r) => r.name).join(', ') || 'None' },
       )
-      .setColor(0x5865f2);
+      .setColor(BRAND_COLOR);
 
     await interaction.reply({ embeds: [embed] });
   },
