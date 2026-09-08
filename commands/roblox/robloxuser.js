@@ -10,6 +10,7 @@ module.exports = {
       option.setName('username').setDescription('The Roblox username to look up').setRequired(true),
     ),
 
+  cooldown: 5,
   async execute(interaction) {
     const username = interaction.options.getString('username');
     await interaction.deferReply();

@@ -1,4 +1,5 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { BRAND_COLOR } = require('../../utils/constants');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -8,8 +9,13 @@ module.exports = {
   async execute(interaction) {
     const sent = await interaction.reply({ content: 'Pinging...', fetchReply: true });
     const latency = sent.createdTimestamp - interaction.createdTimestamp;
-    await interaction.editReply(
-      `🏓 Pong! Latency: ${latency}ms | API: ${Math.round(interaction.client.ws.ping)}ms`,
-    );
+    const embed = new EmbedBuilder()
+      .setTitle('🏓 Pong!')
+      .setColor(BRAND_COLOR)
+      .addFields(
+        { name: 'Latency', value: `${latency}ms`, inline: true },
+        { name: 'API', value: `${Math.round(interaction.client.ws.ping)}ms`, inline: true },
+      );
+    await interaction.editReply({ content: null, embeds: [embed] });
   },
 };

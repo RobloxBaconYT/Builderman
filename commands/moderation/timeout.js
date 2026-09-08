@@ -1,4 +1,5 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+const { BRAND_COLOR } = require('../../utils/constants');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -26,13 +27,27 @@ module.exports = {
     const reason = interaction.options.getString('reason') || 'No reason provided';
 
     if (!target) {
-      return interaction.reply({ content: 'That member could not be found.', ephemeral: true });
+      return interaction.reply({ content: 'That member could not be found.', flags: 64 });
     }
     if (!target.moderatable) {
-      return interaction.reply({ content: "I can't time out that member (role hierarchy or missing permissions).", ephemeral: true });
+      return interaction.reply({ content: "I can't time out that member (role hierarchy or missing permissions).", flags: 64 });
     }
 
-    await target.timeout(minutes * 60 * 1000, reason);
-    await interaction.reply(`🔇 Timed out **${target.user.tag}** for ${minutes} minute(s) — ${reason}`);
+    try {
+      await target.timeout(minutes * 60 * 1000, reason);
+      const embed = new EmbedBuilder()
+        .setTitle('🔇 Member Timed Out')
+        .setColor(BRAND_COLOR)
+        .addFields(
+          { name: 'Member', value: `${target.user.tag}`, inline: true },
+          { name: 'Duration', value: `${minutes} minute(s)`, inline: true },
+          { name: 'Moderator', value: `${interaction.user.tag}`, inline: true },
+          { name: 'Reason', value: reason },
+        );
+      await interaction.reply({ embeds: [embed] });
+    } catch (error) {
+      console.error(error);
+      await interaction.reply({ content: 'Something went wrong trying to time out that member. Check my role permissions and try again.', flags: 64 });
+    }
   },
 };

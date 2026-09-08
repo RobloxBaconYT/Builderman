@@ -1,4 +1,5 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { BRAND_COLOR } = require('../../utils/constants');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -16,6 +17,10 @@ module.exports = {
   async execute(interaction) {
     const sides = interaction.options.getInteger('sides') || 6;
     const roll = Math.floor(Math.random() * sides) + 1;
-    await interaction.reply(`🎲 You rolled a **${roll}** (d${sides})`);
+    const embed = new EmbedBuilder()
+      .setTitle('🎲 Dice Roll')
+      .setColor(BRAND_COLOR)
+      .setDescription(`You rolled a **${roll}** (d${sides})`);
+    await interaction.reply({ embeds: [embed] });
   },
 };

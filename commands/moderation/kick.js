@@ -1,4 +1,5 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+const { BRAND_COLOR } = require('../../utils/constants');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -17,13 +18,26 @@ module.exports = {
     const reason = interaction.options.getString('reason') || 'No reason provided';
 
     if (!target) {
-      return interaction.reply({ content: 'That member could not be found.', ephemeral: true });
+      return interaction.reply({ content: 'That member could not be found.', flags: 64 });
     }
     if (!target.kickable) {
-      return interaction.reply({ content: "I can't kick that member (role hierarchy or missing permissions).", ephemeral: true });
+      return interaction.reply({ content: "I can't kick that member (role hierarchy or missing permissions).", flags: 64 });
     }
 
-    await target.kick(reason);
-    await interaction.reply(`👢 Kicked **${target.user.tag}** — ${reason}`);
+    try {
+      await target.kick(reason);
+      const embed = new EmbedBuilder()
+        .setTitle('👢 Member Kicked')
+        .setColor(BRAND_COLOR)
+        .addFields(
+          { name: 'Member', value: `${target.user.tag}`, inline: true },
+          { name: 'Moderator', value: `${interaction.user.tag}`, inline: true },
+          { name: 'Reason', value: reason },
+        );
+      await interaction.reply({ embeds: [embed] });
+    } catch (error) {
+      console.error(error);
+      await interaction.reply({ content: 'Something went wrong trying to kick that member. Check my role permissions and try again.', flags: 64 });
+    }
   },
 };

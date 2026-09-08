@@ -1,4 +1,5 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { BRAND_COLOR } = require('../../utils/constants');
 
 const responses = [
   'It is certain.', 'Without a doubt.', 'Yes, definitely.', 'You may rely on it.',
@@ -19,6 +20,13 @@ module.exports = {
   async execute(interaction) {
     const question = interaction.options.getString('question');
     const answer = responses[Math.floor(Math.random() * responses.length)];
-    await interaction.reply(`🎱 **Q:** ${question}\n**A:** ${answer}`);
+    const embed = new EmbedBuilder()
+      .setTitle('🎱 Magic 8-Ball')
+      .setColor(BRAND_COLOR)
+      .addFields(
+        { name: 'Question', value: question },
+        { name: 'Answer', value: answer },
+      );
+    await interaction.reply({ embeds: [embed] });
   },
 };

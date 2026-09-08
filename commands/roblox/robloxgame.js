@@ -17,6 +17,7 @@ module.exports = {
       option.setName('game').setDescription('Place ID or roblox.com/games/... link').setRequired(true),
     ),
 
+  cooldown: 5,
   async execute(interaction) {
     const input = interaction.options.getString('game');
     const placeId = extractPlaceId(input);
