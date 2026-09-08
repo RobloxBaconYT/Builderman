@@ -11,7 +11,7 @@
     "url": "https://github.com/RobloxBaconYT/Builderman.git"
   },
   "scripts": {
-    "start": "node index.js",
+    "start": "node deploy-commands.js && node index.js",
     "deploy": "node deploy-commands.js"
   },
   "dependencies": {
