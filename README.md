@@ -1,3 +1,5 @@
+[**Invite this bot to your server**](https://discord.com/oauth2/authorize?client_id=1546521909376843816&permissions=1099511719942&integration_type=0&scope=bot+applications.commands)
+
 # Discord Server Bot
 
 A general-purpose Discord bot built with discord.js v14 — moderation, quality-of-life, and fun slash commands.
