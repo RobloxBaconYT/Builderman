@@ -30,12 +30,16 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 
     // Guild-scoped deploy = instant updates, good for development.
     // Switch to Routes.applicationCommands(CLIENT_ID) for global (takes up to 1hr to propagate).
-    const data = await rest.put(
-      Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
-      { body: commands },
-    );
+    const isGuildDeploy = Boolean(process.env.GUILD_ID);
+    const route = isGuildDeploy
+      ? Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID)
+  : Routes.applicationCommands(process.env.CLIENT_ID);
 
-    console.log(`Successfully reloaded ${data.length} application (/) commands.`);
+const data = await rest.put(route, { body: commands });
+
+console.log(
+  `Successfully reloaded ${data.length} ${isGuildDeploy ? 'guild (instant, test server only)' : 'global (may take up to 1 hour)'} application (/) commands.`,
+);
   } catch (error) {
     console.error(error);
   }
