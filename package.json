@@ -1,7 +1,7 @@
 {
   "name": "discord-server-bot",
   "version": "1.0.0",
-  "description": "Open source bot designed for ROBLOX tracking all together..",
+  "description": "The Roblox lookup bot for Discord, with official news and status tracking on the side",
   "main": "index.js",
   "type": "commonjs",
   "license": "Apache-2.0",

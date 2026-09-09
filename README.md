@@ -13,11 +13,12 @@
 
 [**Invite this bot to your server**](https://discord.com/oauth2/authorize?client_id=1546521909376843816) — free, open source, and ready to use.
 
-A Discord bot built for Roblox communities — look up any Roblox user or game instantly, and get official Roblox platform news delivered straight to your server.
+The Roblox lookup bot for Discord — instantly pull up any Roblox user or game, compare accounts side by side, right in chat. Plus official Roblox news and service status tracking on the side.
 
 ## Features
-- 🎮 Live Roblox user and game lookups, right in Discord
+- 🎮 **Instant Roblox lookups** — users, games, and side-by-side comparisons
 - 📰 Official Roblox DevForum news, auto-posted or on demand
+- 🚦 Roblox service status monitoring — know the moment something breaks
 - ⚡ Stable — crash-protected, rate-limit aware, cooldown-protected
 
 ## Commands
@@ -25,6 +26,7 @@ A Discord bot built for Roblox communities — look up any Roblox user or game i
 **🎮 Roblox Lookups**
 - `/robloxuser <username>` — look up a Roblox account
 - `/robloxgame <place-id-or-link>` — look up a Roblox game/experience
+- `/robloxcompare <user1> <user2>` — compare two Roblox accounts side by side
 
 **📰 News**
 - `/setnews [channel]` — get official Roblox DevForum updates posted here (requires Manage Server)
@@ -52,7 +54,7 @@ Want to run your own copy — for development, contributing, or hosting independ
 6. Right-click your test server icon (with Developer Mode on, in User Settings → Advanced) and **Copy Server ID** — this is your `GUILD_ID`, used for instant local command deployment.
 
 ### 2. Set up a Supabase database
-The news feature needs somewhere to remember which servers are subscribed. Create a free project at https://supabase.com, then in the SQL Editor run:
+The news and status features need somewhere to remember subscriptions. Create a free project at https://supabase.com, then in the SQL Editor run:
 ```sql
 create table news_subscriptions (id bigint generated always as identity primary key, guild_id text not null unique, channel_id text not null, created_at timestamptz default now());
 create table feed_state (source text primary key, last_item_link text, updated_at timestamptz default now());

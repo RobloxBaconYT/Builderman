@@ -10,9 +10,9 @@ module.exports = {
     const embed = new EmbedBuilder()
       .setTitle('Builderman — Command List')
       .setColor(BRAND_COLOR)
-      .setDescription('A Roblox-focused Discord bot.')
+      .setDescription('The Roblox lookup bot — plus news and status tracking on the side.')
       .addFields(
-        { name: '🎮 Roblox Lookups', value: '`/robloxuser` `/robloxgame`' },
+        { name: '🎮 Roblox Lookups', value: '`/robloxuser` `/robloxgame` `/robloxcompare`' },
         { name: '📰 News', value: '`/setnews` `/stopnews` `/latestnews`' },
         { name: '🚦 Status Alerts', value: '`/setstatus` `/stopstatus`' },
         { name: '🔧 Utility', value: '`/ping` `/help`' },
