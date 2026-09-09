@@ -3,6 +3,8 @@ const fs = require('fs');
 const path = require('path');
 const { Client, GatewayIntentBits, Collection, Events } = require('discord.js');
 const { checkNews } = require('./utils/newsChecker');
+const { checkServiceStatus } = require('./utils/statusChecker');
+const { startHealthServer } = require('./utils/healthServer');
 
 const client = new Client({
   intents: [
@@ -87,7 +89,11 @@ client.once(Events.ClientReady, (readyClient) => {
 
   const CHECK_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
   checkNews(readyClient);
-  setInterval(() => checkNews(readyClient), CHECK_INTERVAL_MS);
+  checkServiceStatus(readyClient);
+  setInterval(() => {
+    checkNews(readyClient);
+    checkServiceStatus(readyClient);
+  }, CHECK_INTERVAL_MS);
 });
 
 process.on('unhandledRejection', (error) => {
@@ -107,4 +113,5 @@ async function shutdown(signal) {
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 
+startHealthServer(client);
 client.login(process.env.DISCORD_TOKEN);

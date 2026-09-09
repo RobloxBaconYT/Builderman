@@ -14,6 +14,7 @@ module.exports = {
       .addFields(
         { name: '🎮 Roblox Lookups', value: '`/robloxuser` `/robloxgame`' },
         { name: '📰 News', value: '`/setnews` `/stopnews` `/latestnews`' },
+        { name: '🚦 Status Alerts', value: '`/setstatus` `/stopstatus`' },
         { name: '🔧 Utility', value: '`/ping` `/help`' },
       )
       .setFooter({ text: 'Type / and start typing a command name to see its options.' });

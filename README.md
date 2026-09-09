@@ -31,6 +31,10 @@ A Discord bot built for Roblox communities — look up any Roblox user or game i
 - `/stopnews` — stop the news feed (requires Manage Server)
 - `/latestnews` — see the 3 most recent DevForum posts on demand, no subscription needed
 
+**🚦 Status Alerts**
+- `/setstatus [channel]` — get alerted when key Roblox services go down or recover (requires Manage Server)
+- `/stopstatus` — stop status alerts (requires Manage Server)
+
 **🔧 Utility**
 - `/ping`
 - `/help`
