@@ -56,6 +56,8 @@ The news feature needs somewhere to remember which servers are subscribed. Creat
 ```sql
 create table news_subscriptions (id bigint generated always as identity primary key, guild_id text not null unique, channel_id text not null, created_at timestamptz default now());
 create table feed_state (source text primary key, last_item_link text, updated_at timestamptz default now());
+create table service_status (service_name text primary key, status text not null default 'up', consecutive_failures integer not null default 0, last_changed timestamptz default now(), updated_at timestamptz default now());
+create table status_subscriptions (id bigint generated always as identity primary key, guild_id text not null unique, channel_id text not null, created_at timestamptz default now());
 ```
 Grab your **Project URL** and **secret key** (`sb_secret_...`, under Settings → API Keys → Publishable and secret API keys — not the legacy keys, which Supabase is deprecating).
 
