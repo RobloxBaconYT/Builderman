@@ -68,22 +68,53 @@ module.exports = {
         return interaction.editReply(`No Roblox user found with the username **${username2}**.`);
       }
 
-      const olderAccount = profile1.created < profile2.created ? profile1 : profile2;
-      const moreFriends =
-        profile1.friendsCount === profile2.friendsCount
-          ? null
-          : profile1.friendsCount > profile2.friendsCount
-          ? profile1
-          : profile2;
-      const moreFollowers =
-        profile1.followersCount === profile2.followersCount
-          ? null
-          : profile1.followersCount > profile2.followersCount
-          ? profile1
-          : profile2;
+      let score1 = 0;
+      let score2 = 0;
+      const lines = [];
+
+      if (profile1.created.getTime() !== profile2.created.getTime()) {
+        const older = profile1.created < profile2.created ? profile1 : profile2;
+        older === profile1 ? score1++ : score2++;
+        lines.push(`🏆 Older account: **${older.displayName}**`);
+      } else {
+        lines.push(`🏆 Account age: tied`);
+      }
+
+      if (profile1.friendsCount !== profile2.friendsCount) {
+        const more = profile1.friendsCount > profile2.friendsCount ? profile1 : profile2;
+        more === profile1 ? score1++ : score2++;
+        lines.push(`👥 More friends: **${more.displayName}** (${more.friendsCount})`);
+      } else {
+        lines.push(`👥 Friends: tied`);
+      }
+
+      if (profile1.followersCount !== profile2.followersCount) {
+        const more = profile1.followersCount > profile2.followersCount ? profile1 : profile2;
+        more === profile1 ? score1++ : score2++;
+        lines.push(`👣 More followers: **${more.displayName}** (${more.followersCount})`);
+      } else {
+        lines.push(`👣 Followers: tied`);
+      }
+
+      if (profile1.hasVerifiedBadge !== profile2.hasVerifiedBadge) {
+        const verified = profile1.hasVerifiedBadge ? profile1 : profile2;
+        verified === profile1 ? score1++ : score2++;
+        lines.push(`✅ Verified badge: **${verified.displayName}**`);
+      }
+
+      let winnerLine;
+      if (score1 === score2) {
+        winnerLine = "🤝 It's a tie!";
+      } else {
+        const winner = score1 > score2 ? profile1 : profile2;
+        winnerLine = `👑 Overall winner: **${winner.displayName}** (${Math.max(score1, score2)}-${Math.min(score1, score2)})`;
+      }
+
+      const medal1 = score1 > score2 ? '🥇 ' : score1 < score2 ? '🥈 ' : '';
+      const medal2 = score2 > score1 ? '🥇 ' : score2 < score1 ? '🥈 ' : '';
 
       const embed1 = new EmbedBuilder()
-        .setTitle(`${profile1.displayName}${profile1.hasVerifiedBadge ? ' ✅' : ''} (@${profile1.name})`)
+        .setTitle(`${medal1}${profile1.displayName}${profile1.hasVerifiedBadge ? ' ✅' : ''} (@${profile1.name})`)
         .setURL(`https://www.roblox.com/users/${profile1.userId}/profile`)
         .setThumbnail(profile1.avatarUrl || null)
         .setColor(BRAND_COLOR)
@@ -94,7 +125,7 @@ module.exports = {
         );
 
       const embed2 = new EmbedBuilder()
-        .setTitle(`${profile2.displayName}${profile2.hasVerifiedBadge ? ' ✅' : ''} (@${profile2.name})`)
+        .setTitle(`${medal2}${profile2.displayName}${profile2.hasVerifiedBadge ? ' ✅' : ''} (@${profile2.name})`)
         .setURL(`https://www.roblox.com/users/${profile2.userId}/profile`)
         .setThumbnail(profile2.avatarUrl || null)
         .setColor(BRAND_COLOR)
@@ -104,14 +135,8 @@ module.exports = {
           { name: 'Followers', value: `${profile2.followersCount}`, inline: true },
         );
 
-      const summaryLines = [
-        `🏆 Older account: **${olderAccount.displayName}**`,
-        moreFriends ? `👥 More friends: **${moreFriends.displayName}**` : `👥 Friends: tied`,
-        moreFollowers ? `👣 More followers: **${moreFollowers.displayName}**` : `👣 Followers: tied`,
-      ];
-
       await interaction.editReply({
-        content: `🆚 **${profile1.displayName} vs ${profile2.displayName}**\n${summaryLines.join('\n')}`,
+        content: `🆚 **${profile1.displayName} vs ${profile2.displayName}**\n${lines.join('\n')}\n${winnerLine}`,
         embeds: [embed1, embed2],
       });
     } catch (error) {
