@@ -2,6 +2,7 @@ require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 const { Client, GatewayIntentBits, Collection, Events } = require('discord.js');
+const { checkNews } = require('./utils/newsChecker');
 
 const client = new Client({
   intents: [
@@ -82,7 +83,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 client.once(Events.ClientReady, (readyClient) => {
   console.log(`Logged in as ${readyClient.user.tag}`);
-  readyClient.user.setActivity('Roblox stats | /help', { type: 3 }); // type 3 = Watching
+  readyClient.user.setActivity('Roblox news | /help', { type: 3 }); // type 3 = Watching
+
+  const CHECK_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+  checkNews(readyClient);
+  setInterval(() => checkNews(readyClient), CHECK_INTERVAL_MS);
 });
 
 process.on('unhandledRejection', (error) => {

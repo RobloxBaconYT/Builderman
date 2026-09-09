@@ -10,7 +10,7 @@ Thanks for considering contributing to this bot! Contributions of all sizes are 
 
 ## Adding a new command
 
-Drop a new file in the matching subfolder under `commands/` (`moderation/`, `fun/`, or `utility/`) following this shape:
+Drop a new file in the matching subfolder under `commands/` (`roblox/` or `utility/`) following this shape:
 
 ```js
 const { SlashCommandBuilder } = require('discord.js');

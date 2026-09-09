@@ -10,11 +10,11 @@ module.exports = {
     const embed = new EmbedBuilder()
       .setTitle('Builderman — Command List')
       .setColor(BRAND_COLOR)
+      .setDescription('A Roblox-focused Discord bot.')
       .addFields(
-        { name: '🛡️ Moderation', value: '`/kick` `/ban` `/timeout` `/clear`' },
-        { name: '🎉 Fun', value: '`/8ball` `/coinflip` `/dice`' },
-        { name: '🔧 Utility', value: '`/ping` `/userinfo` `/serverinfo` `/avatar` `/help`' },
-        { name: '🎮 Roblox', value: '`/robloxuser` `/robloxgame`' },
+        { name: '🎮 Roblox Lookups', value: '`/robloxuser` `/robloxgame`' },
+        { name: '📰 News', value: '`/setnews` `/stopnews` `/latestnews`' },
+        { name: '🔧 Utility', value: '`/ping` `/help`' },
       )
       .setFooter({ text: 'Type / and start typing a command name to see its options.' });
 
