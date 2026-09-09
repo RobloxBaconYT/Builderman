@@ -37,6 +37,18 @@ async function getRobloxProfile(username) {
   };
 }
 
+function compareCategory(label, emoji, value1, value2, format, p1Name, p2Name) {
+  if (value1 === value2) {
+    return { line: `${emoji} **${label}**\n🤝 Tied — ${format(value1)}`, winner: null };
+  }
+  const p1Wins = value1 > value2;
+  const winnerName = p1Wins ? p1Name : p2Name;
+  return {
+    line: `${emoji} **${label}**\n🥇 ${winnerName} — ${format(p1Wins ? value1 : value2)}\n🥈 ${p1Wins ? p2Name : p1Name} — ${format(p1Wins ? value2 : value1)}`,
+    winner: p1Wins ? 1 : 2,
+  };
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('robloxcompare')
@@ -68,77 +80,60 @@ module.exports = {
         return interaction.editReply(`No Roblox user found with the username **${username2}**.`);
       }
 
+      const p1 = profile1.displayName;
+      const p2 = profile2.displayName;
       let score1 = 0;
       let score2 = 0;
-      const lines = [];
+      const sections = [];
 
+      const ageResult = compareCategory(
+        'Account Age', '🏆',
+        -profile1.created.getTime(), -profile2.created.getTime(),
+        () => '', p1, p2,
+      );
+      sections.push(
+        `🏆 **Account Age**\n${
+          profile1.created.getTime() === profile2.created.getTime()
+            ? `🤝 Tied`
+            : profile1.created < profile2.created
+            ? `🥇 ${p1} — <t:${Math.floor(profile1.created.getTime() / 1000)}:R>\n🥈 ${p2} — <t:${Math.floor(profile2.created.getTime() / 1000)}:R>`
+            : `🥇 ${p2} — <t:${Math.floor(profile2.created.getTime() / 1000)}:R>\n🥈 ${p1} — <t:${Math.floor(profile1.created.getTime() / 1000)}:R>`
+        }`,
+      );
       if (profile1.created.getTime() !== profile2.created.getTime()) {
-        const older = profile1.created < profile2.created ? profile1 : profile2;
-        older === profile1 ? score1++ : score2++;
-        lines.push(`🏆 Older account: **${older.displayName}**`);
-      } else {
-        lines.push(`🏆 Account age: tied`);
+        profile1.created < profile2.created ? score1++ : score2++;
       }
 
-      if (profile1.friendsCount !== profile2.friendsCount) {
-        const more = profile1.friendsCount > profile2.friendsCount ? profile1 : profile2;
-        more === profile1 ? score1++ : score2++;
-        lines.push(`👥 More friends: **${more.displayName}** (${more.friendsCount})`);
-      } else {
-        lines.push(`👥 Friends: tied`);
-      }
+      const friendsResult = compareCategory('Friends', '👥', profile1.friendsCount, profile2.friendsCount, (v) => `${v}`, p1, p2);
+      sections.push(friendsResult.line);
+      if (friendsResult.winner === 1) score1++;
+      if (friendsResult.winner === 2) score2++;
 
-      if (profile1.followersCount !== profile2.followersCount) {
-        const more = profile1.followersCount > profile2.followersCount ? profile1 : profile2;
-        more === profile1 ? score1++ : score2++;
-        lines.push(`👣 More followers: **${more.displayName}** (${more.followersCount})`);
-      } else {
-        lines.push(`👣 Followers: tied`);
-      }
+      const followersResult = compareCategory('Followers', '👣', profile1.followersCount, profile2.followersCount, (v) => `${v}`, p1, p2);
+      sections.push(followersResult.line);
+      if (followersResult.winner === 1) score1++;
+      if (followersResult.winner === 2) score2++;
 
       if (profile1.hasVerifiedBadge !== profile2.hasVerifiedBadge) {
-        const verified = profile1.hasVerifiedBadge ? profile1 : profile2;
-        verified === profile1 ? score1++ : score2++;
-        lines.push(`✅ Verified badge: **${verified.displayName}**`);
+        const verifiedName = profile1.hasVerifiedBadge ? p1 : p2;
+        sections.push(`✅ **Verified Badge**\n🥇 ${verifiedName}`);
+        profile1.hasVerifiedBadge ? score1++ : score2++;
       }
 
-      let winnerLine;
-      if (score1 === score2) {
-        winnerLine = "🤝 It's a tie!";
-      } else {
-        const winner = score1 > score2 ? profile1 : profile2;
-        winnerLine = `👑 Overall winner: **${winner.displayName}** (${Math.max(score1, score2)}-${Math.min(score1, score2)})`;
-      }
+      const winnerLine =
+        score1 === score2
+          ? "🤝 **It's an overall tie!**"
+          : `👑 **Overall Winner: ${score1 > score2 ? p1 : p2}** (${Math.max(score1, score2)}-${Math.min(score1, score2)})`;
 
-      const medal1 = score1 > score2 ? '🥇 ' : score1 < score2 ? '🥈 ' : '';
-      const medal2 = score2 > score1 ? '🥇 ' : score2 < score1 ? '🥈 ' : '';
-
-      const embed1 = new EmbedBuilder()
-        .setTitle(`${medal1}${profile1.displayName}${profile1.hasVerifiedBadge ? ' ✅' : ''} (@${profile1.name})`)
-        .setURL(`https://www.roblox.com/users/${profile1.userId}/profile`)
-        .setThumbnail(profile1.avatarUrl || null)
-        .setColor(BRAND_COLOR)
-        .addFields(
-          { name: 'Account Created', value: `<t:${Math.floor(profile1.created.getTime() / 1000)}:R>`, inline: true },
-          { name: 'Friends', value: `${profile1.friendsCount}`, inline: true },
-          { name: 'Followers', value: `${profile1.followersCount}`, inline: true },
-        );
-
-      const embed2 = new EmbedBuilder()
-        .setTitle(`${medal2}${profile2.displayName}${profile2.hasVerifiedBadge ? ' ✅' : ''} (@${profile2.name})`)
-        .setURL(`https://www.roblox.com/users/${profile2.userId}/profile`)
+      const embed = new EmbedBuilder()
+        .setAuthor({ name: p1, iconURL: profile1.avatarUrl || undefined, url: `https://www.roblox.com/users/${profile1.userId}/profile` })
         .setThumbnail(profile2.avatarUrl || null)
+        .setTitle(`🆚 ${p1} vs ${p2}`)
         .setColor(BRAND_COLOR)
-        .addFields(
-          { name: 'Account Created', value: `<t:${Math.floor(profile2.created.getTime() / 1000)}:R>`, inline: true },
-          { name: 'Friends', value: `${profile2.friendsCount}`, inline: true },
-          { name: 'Followers', value: `${profile2.followersCount}`, inline: true },
-        );
+        .setDescription(`${sections.join('\n\n')}\n\n${winnerLine}`)
+        .setFooter({ text: `${p2}'s profile linked via thumbnail` });
 
-      await interaction.editReply({
-        content: `🆚 **${profile1.displayName} vs ${profile2.displayName}**\n${lines.join('\n')}\n${winnerLine}`,
-        embeds: [embed1, embed2],
-      });
+      await interaction.editReply({ embeds: [embed] });
     } catch (error) {
       console.error(error);
       let message = 'Something went wrong comparing those users. Try again in a moment.';
