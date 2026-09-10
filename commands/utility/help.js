@@ -12,7 +12,7 @@ module.exports = {
       .setColor(BRAND_COLOR)
       .setDescription('The Roblox lookup bot — plus news and status tracking on the side.')
       .addFields(
-        { name: '🎮 Roblox Lookups', value: '`/robloxuser` `/robloxgame` `/robloxcompare`' },
+        { name: '🎮 Roblox Lookups', value: '`/robloxuser` `/robloxgame` `/robloxcompare` `/robloxgroup`' },
         { name: '📰 News', value: '`/setnews` `/stopnews` `/latestnews`' },
         { name: '🚦 Status Alerts', value: '`/setstatus` `/stopstatus`' },
         { name: '🔧 Utility', value: '`/ping` `/help`' },

@@ -1,5 +1,3 @@
-const { EmbedBuilder } = require('discord.js');
-const { BRAND_COLOR } = require('./constants');
 const { fetchWithTimeout } = require('./fetchWithTimeout');
 const { supabase } = require('./supabase');
 
@@ -17,6 +15,9 @@ async function checkServiceStatus(client) {
     const { data: rows } = await supabase.from('service_status').select('*');
     const stateByName = new Map((rows || []).map((r) => [r.service_name, r]));
     const { data: subs } = await supabase.from('status_subscriptions').select('*');
+
+    const newlyDown = [];
+    const newlyUp = [];
 
     for (const service of SERVICES) {
       const stored = stateByName.get(service.name);
@@ -39,7 +40,7 @@ async function checkServiceStatus(client) {
 
       if (isUp) {
         if (stored.status === 'down') {
-          await announceChange(client, subs, service.name, 'up');
+          newlyUp.push(service.name);
         }
         await supabase
           .from('service_status')
@@ -48,7 +49,7 @@ async function checkServiceStatus(client) {
       } else {
         const failures = stored.consecutive_failures + 1;
         if (failures >= FAILURES_TO_CONFIRM_DOWN && stored.status !== 'down') {
-          await announceChange(client, subs, service.name, 'down');
+          newlyDown.push(service.name);
           await supabase
             .from('service_status')
             .update({ status: 'down', consecutive_failures: failures, last_changed: new Date(), updated_at: new Date() })
@@ -61,21 +62,30 @@ async function checkServiceStatus(client) {
         }
       }
     }
+
+    if (newlyDown.length > 0) {
+      await announceChange(client, subs, newlyDown, 'down');
+    }
+    if (newlyUp.length > 0) {
+      await announceChange(client, subs, newlyUp, 'up');
+    }
   } catch (error) {
     console.error('Error checking Roblox service status:', error);
   }
 }
 
-async function announceChange(client, subs, serviceName, newStatus) {
-  const embed = new EmbedBuilder()
-    .setTitle(newStatus === 'down' ? `🔴 ${serviceName} is down` : `🟢 ${serviceName} is back up`)
-    .setColor(newStatus === 'down' ? 0xed4245 : 0x57f287)
-    .setTimestamp();
+async function announceChange(client, subs, serviceNames, newStatus) {
+  const timestamp = `<t:${Math.floor(Date.now() / 1000)}:F>`;
+  const list = serviceNames.join(', ');
+  const content =
+    newStatus === 'down'
+      ? `As of ${timestamp}, **${list}** ${serviceNames.length > 1 ? 'are' : 'is'} **down**. 🔴`
+      : `As of ${timestamp}, **${list}** ${serviceNames.length > 1 ? 'are' : 'is'} **back up**. 🟢`;
 
   for (const sub of subs || []) {
     try {
       const channel = await client.channels.fetch(sub.channel_id);
-      await channel.send({ embeds: [embed] });
+      await channel.send({ content });
     } catch (sendError) {
       console.error(`Failed to send status alert to guild ${sub.guild_id}:`, sendError.message);
     }
