@@ -7,7 +7,7 @@ async function logUsage(interaction, ok) {
   try {
     const { error } = await supabase
       .from('command_usage')
-      .insert({ command: interaction.commandName, guild_id: interaction.guildId, ok });
+      .insert({ command: interaction.commandName, guild_id: interaction.guildId, guild_name: interaction.guild?.name ?? null, ok });
     if (error) throw error;
   } catch (error) {
     console.error('Usage log failed:', error.message);
