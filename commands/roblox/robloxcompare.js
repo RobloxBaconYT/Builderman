@@ -1,6 +1,10 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { BRAND_COLOR } = require('../../utils/constants');
-const { fetchWithTimeout } = require('../../utils/fetchWithTimeout');
+const { cachedFetch: fetchWithTimeout } = require('../../utils/cachedFetch');
+const { optionalJson } = require('../../utils/safeJson');
+
+const toJson = (res) => res.json();
+const relTime = (date) => `<t:${Math.floor(date.getTime() / 1000)}:R>`;
 
 async function getRobloxProfile(username) {
   const lookupRes = await fetchWithTimeout('https://users.roblox.com/v1/usernames/users', {
@@ -9,28 +13,27 @@ async function getRobloxProfile(username) {
     body: JSON.stringify({ usernames: [username], excludeBannedUsers: false }),
   });
   const lookupData = await lookupRes.json();
+
   if (!lookupData.data || lookupData.data.length === 0) return null;
 
   const { id: userId, name, displayName, hasVerifiedBadge } = lookupData.data[0];
 
-  const [profileRes, avatarRes, friendsRes, followersRes] = await Promise.all([
-    fetchWithTimeout(`https://users.roblox.com/v1/users/${userId}`),
-    fetchWithTimeout(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=420x420&format=Png&isCircular=false`),
-    fetchWithTimeout(`https://friends.roblox.com/v1/users/${userId}/friends/count`),
-    fetchWithTimeout(`https://friends.roblox.com/v1/users/${userId}/followers/count`),
+  // Counts are needed for the comparison, the avatar is only cosmetic.
+  const [profile, friends, followers, avatarData] = await Promise.all([
+    fetchWithTimeout(`https://users.roblox.com/v1/users/${userId}`).then(toJson),
+    fetchWithTimeout(`https://friends.roblox.com/v1/users/${userId}/friends/count`).then(toJson),
+    fetchWithTimeout(`https://friends.roblox.com/v1/users/${userId}/followers/count`).then(toJson),
+    optionalJson(
+      fetchWithTimeout(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=420x420&format=Png&isCircular=false`),
+    ),
   ]);
-
-  const profile = await profileRes.json();
-  const avatarData = await avatarRes.json();
-  const friends = await friendsRes.json();
-  const followers = await followersRes.json();
 
   return {
     userId,
     name,
     displayName,
     hasVerifiedBadge,
-    avatarUrl: avatarData.data?.[0]?.imageUrl,
+    avatarUrl: avatarData?.data?.[0]?.imageUrl,
     created: new Date(profile.created),
     friendsCount: friends.count ?? 0,
     followersCount: followers.count ?? 0,
@@ -64,7 +67,6 @@ module.exports = {
   async execute(interaction) {
     const username1 = interaction.options.getString('user1');
     const username2 = interaction.options.getString('user2');
-
     await interaction.deferReply();
 
     try {
@@ -86,22 +88,19 @@ module.exports = {
       let score2 = 0;
       const sections = [];
 
-      const ageResult = compareCategory(
-        'Account Age', '🏆',
-        -profile1.created.getTime(), -profile2.created.getTime(),
-        () => '', p1, p2,
-      );
-      sections.push(
-        `🏆 **Account Age**\n${
-          profile1.created.getTime() === profile2.created.getTime()
-            ? `🤝 Tied`
-            : profile1.created < profile2.created
-            ? `🥇 ${p1} — <t:${Math.floor(profile1.created.getTime() / 1000)}:R>\n🥈 ${p2} — <t:${Math.floor(profile2.created.getTime() / 1000)}:R>`
-            : `🥇 ${p2} — <t:${Math.floor(profile2.created.getTime() / 1000)}:R>\n🥈 ${p1} — <t:${Math.floor(profile1.created.getTime() / 1000)}:R>`
-        }`,
-      );
-      if (profile1.created.getTime() !== profile2.created.getTime()) {
-        profile1.created < profile2.created ? score1++ : score2++;
+      // Account age: older account wins.
+      const t1 = profile1.created.getTime();
+      const t2 = profile2.created.getTime();
+      if (t1 === t2) {
+        sections.push('🏆 **Account Age**\n🤝 Tied');
+      } else {
+        const p1Older = t1 < t2;
+        const [first, second] = p1Older ? [profile1, profile2] : [profile2, profile1];
+        sections.push(
+          `🏆 **Account Age**\n🥇 ${first.displayName} — ${relTime(first.created)}\n🥈 ${second.displayName} — ${relTime(second.created)}`,
+        );
+        if (p1Older) score1++;
+        else score2++;
       }
 
       const friendsResult = compareCategory('Friends', '👥', profile1.friendsCount, profile2.friendsCount, (v) => `${v}`, p1, p2);
@@ -117,7 +116,8 @@ module.exports = {
       if (profile1.hasVerifiedBadge !== profile2.hasVerifiedBadge) {
         const verifiedName = profile1.hasVerifiedBadge ? p1 : p2;
         sections.push(`✅ **Verified Badge**\n🥇 ${verifiedName}`);
-        profile1.hasVerifiedBadge ? score1++ : score2++;
+        if (profile1.hasVerifiedBadge) score1++;
+        else score2++;
       }
 
       const winnerLine =
@@ -130,8 +130,7 @@ module.exports = {
         .setThumbnail(profile2.avatarUrl || null)
         .setTitle(`🆚 ${p1} vs ${p2}`)
         .setColor(BRAND_COLOR)
-        .setDescription(`${sections.join('\n\n')}\n\n${winnerLine}`)
-        .setFooter({ text: `${p2}'s profile linked via thumbnail` });
+        .setDescription(`${sections.join('\n\n')}\n\n${winnerLine}`);
 
       await interaction.editReply({ embeds: [embed] });
     } catch (error) {

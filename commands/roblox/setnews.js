@@ -12,7 +12,21 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
   async execute(interaction) {
+    if (!interaction.inGuild()) {
+      return interaction.reply({ content: 'This command only works in a server.', flags: 64 });
+    }
+
     const channel = interaction.options.getChannel('channel') || interaction.channel;
+    const guild = interaction.guild ?? (await interaction.client.guilds.fetch(interaction.guildId));
+    const me = guild.members.me ?? (await guild.members.fetchMe());
+    const needed = [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks];
+
+    if (!channel.permissionsFor(me)?.has(needed)) {
+      return interaction.reply({
+        content: `I need **View Channel**, **Send Messages** and **Embed Links** in ${channel} first.`,
+        flags: 64,
+      });
+    }
 
     try {
       const { error } = await supabase

@@ -2,8 +2,15 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const Parser = require('rss-parser');
 const { BRAND_COLOR } = require('../../utils/constants');
 
-const parser = new Parser();
+const parser = new Parser({ timeout: 8000 });
 const DEVFORUM_FEED_URL = 'https://devforum.roblox.com/c/updates/45.rss';
+
+function formatItem(item) {
+  const title = (item.title || 'Untitled').replace(/[\[\]]/g, '');
+  const snippet = (item.contentSnippet || '').trim();
+  const body = snippet.length > 150 ? `${snippet.slice(0, 150)}...` : snippet;
+  return `**[${title}](${item.link})**${body ? `\n${body}` : ''}`;
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -25,11 +32,7 @@ module.exports = {
       const embed = new EmbedBuilder()
         .setTitle('📰 Latest Roblox DevForum Updates')
         .setColor(BRAND_COLOR)
-        .setDescription(
-          items
-            .map((item) => `**[${item.title}](${item.link})**\n${(item.contentSnippet || '').slice(0, 150)}...`)
-            .join('\n\n'),
-        );
+        .setDescription(items.map(formatItem).join('\n\n'));
 
       await interaction.editReply({ embeds: [embed] });
     } catch (error) {

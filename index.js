@@ -4,15 +4,13 @@ const path = require('path');
 const { Client, GatewayIntentBits, Collection, Events } = require('discord.js');
 const { checkNews } = require('./utils/newsChecker');
 const { checkServiceStatus } = require('./utils/statusChecker');
+const { supabase } = require('./utils/supabase');
+const { logUsage } = require('./utils/usageLogger');
 const { startHealthServer } = require('./utils/healthServer');
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-  ],
+  intents: [GatewayIntentBits.Guilds],
+  allowedMentions: { parse: [] },
 });
 
 client.commands = new Collection();
@@ -68,8 +66,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   try {
     await command.execute(interaction);
+    logUsage(interaction, true);
   } catch (error) {
     console.error(`Error executing ${interaction.commandName}:`, error);
+    logUsage(interaction, false);
     try {
       const errorReply = { content: 'There was an error while executing this command.', flags: 64 };
       if (interaction.replied || interaction.deferred) {
@@ -83,9 +83,22 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
+client.on(Events.GuildDelete, async (guild) => {
+  if (!guild.available || process.env.DISABLE_BACKGROUND_JOBS === 'true') return; // temporary outage, not a removal
+  for (const table of ['news_subscriptions', 'status_subscriptions']) {
+    const { error } = await supabase.from(table).delete().eq('guild_id', guild.id);
+    if (error) console.error(`Failed to clean ${table} for guild ${guild.id}:`, error.message);
+  }
+});
+
 client.once(Events.ClientReady, (readyClient) => {
   console.log(`Logged in as ${readyClient.user.tag}`);
   readyClient.user.setActivity('Roblox news | /help', { type: 3 }); // type 3 = Watching
+
+  if (process.env.DISABLE_BACKGROUND_JOBS === 'true') {
+    console.log('Background jobs disabled (dev mode).');
+    return;
+  }
 
   const CHECK_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
   checkNews(readyClient);
@@ -102,6 +115,7 @@ process.on('unhandledRejection', (error) => {
 
 process.on('uncaughtException', (error) => {
   console.error('Uncaught exception:', error);
+  process.exit(1); // let Railway restart a clean process
 });
 
 async function shutdown(signal) {

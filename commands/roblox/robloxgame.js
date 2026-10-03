@@ -1,9 +1,9 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { BRAND_COLOR } = require('../../utils/constants');
-const { fetchWithTimeout } = require('../../utils/fetchWithTimeout');
+const { cachedFetch: fetchWithTimeout } = require('../../utils/cachedFetch');
 
 function extractPlaceId(input) {
-  const urlMatch = input.match(/roblox\.com\/games\/(\d+)/);
+  const urlMatch = input.match(/roblox\.com\/(?:[a-z-]+\/)?games\/(\d+)/i);
   if (urlMatch) return urlMatch[1];
   if (/^\d+$/.test(input.trim())) return input.trim();
   return null;
@@ -95,6 +95,8 @@ module.exports = {
       let message = 'Something went wrong looking up that game. Try again in a moment.';
       if (error.name === 'AbortError') {
         message = 'Roblox took too long to respond. Try again in a moment.';
+      } else if (error.status === 400 || error.status === 404) {
+        message = 'Could not find a game with that Place ID.';
       } else if (error.status === 429) {
         message = 'Roblox is rate-limiting requests right now. Try again in a minute.';
       }

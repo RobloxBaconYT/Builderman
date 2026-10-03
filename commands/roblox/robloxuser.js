@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { BRAND_COLOR } = require('../../utils/constants');
-const { fetchWithTimeout } = require('../../utils/fetchWithTimeout');
+const { cachedFetch: fetchWithTimeout } = require('../../utils/cachedFetch');
+const { optionalJson } = require('../../utils/safeJson');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -29,19 +30,14 @@ module.exports = {
 
       const { id: userId, name, displayName, hasVerifiedBadge } = lookupData.data[0];
 
-      const [profileRes, avatarRes, friendsRes, followersRes] = await Promise.all([
-        fetchWithTimeout(`https://users.roblox.com/v1/users/${userId}`),
-        fetchWithTimeout(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=420x420&format=Png&isCircular=false`),
-        fetchWithTimeout(`https://friends.roblox.com/v1/users/${userId}/friends/count`),
-        fetchWithTimeout(`https://friends.roblox.com/v1/users/${userId}/followers/count`),
+      const [profile, avatarData, friends, followers] = await Promise.all([
+        fetchWithTimeout(`https://users.roblox.com/v1/users/${userId}`).then((r) => r.json()),
+        optionalJson(fetchWithTimeout(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=420x420&format=Png&isCircular=false`)),
+        optionalJson(fetchWithTimeout(`https://friends.roblox.com/v1/users/${userId}/friends/count`)),
+        optionalJson(fetchWithTimeout(`https://friends.roblox.com/v1/users/${userId}/followers/count`)),
       ]);
 
-      const profile = await profileRes.json();
-      const avatarData = await avatarRes.json();
-      const friends = await friendsRes.json();
-      const followers = await followersRes.json();
-
-      const avatarUrl = avatarData.data?.[0]?.imageUrl;
+      const avatarUrl = avatarData?.data?.[0]?.imageUrl;
       const created = new Date(profile.created);
       const bio = profile.description?.trim() || 'No bio set.';
 
@@ -52,8 +48,8 @@ module.exports = {
         .setDescription(bio.length > 300 ? `${bio.slice(0, 300)}...` : bio)
         .addFields(
           { name: 'Account Created', value: `<t:${Math.floor(created.getTime() / 1000)}:R>`, inline: true },
-          { name: 'Friends', value: `${friends.count ?? 'N/A'}`, inline: true },
-          { name: 'Followers', value: `${followers.count ?? 'N/A'}`, inline: true },
+          { name: 'Friends', value: `${friends?.count ?? 'N/A'}`, inline: true },
+          { name: 'Followers', value: `${followers?.count ?? 'N/A'}`, inline: true },
         )
         .setColor(BRAND_COLOR)
         .setFooter({ text: `Roblox User ID: ${userId}` });
